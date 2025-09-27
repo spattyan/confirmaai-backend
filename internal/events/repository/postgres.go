@@ -39,8 +39,15 @@ func (g gormRepository) Delete(id string) error {
 }
 
 func (g gormRepository) List() ([]domain.Event, error) {
-	//TODO implement me
-	panic("implement me")
+	var events []domain.Event
+	result := g.database.Find(&events)
+
+	if result.Error != nil {
+		log.Printf("Error fetching events: %v", result.Error)
+		return nil, errors.New("failed to fetch events")
+	}
+
+	return events, nil
 }
 
 func NewGormRepository(database *gorm.DB) domain.Repository {

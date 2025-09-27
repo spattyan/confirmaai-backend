@@ -3,22 +3,35 @@ package handler
 import (
 	"net/http"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
+	"github.com/spattyan/confirmaai-backend/helper"
 	"github.com/spattyan/confirmaai-backend/internal/events/domain"
 	"github.com/spattyan/confirmaai-backend/internal/events/usecases/create"
+	"github.com/spattyan/confirmaai-backend/internal/events/usecases/list"
 )
 
 type EventHandler struct {
 	createUseCase create.UseCase
+	listUseCase   list.UseCase
 }
 
 func NewEventHandler(repository domain.Repository) *EventHandler {
-	return &EventHandler{createUseCase: create.NewUseCase(repository)}
+	return &EventHandler{createUseCase: create.NewUseCase(repository), listUseCase: list.NewUseCase(repository)}
 }
 
 func (h *EventHandler) EventRoutes(router fiber.Router) {
 	router.Post("/events/new", h.Create)
+	router.Get("/events", h.List)
+}
+
+func (h *EventHandler) List(c fiber.Ctx) error {
+	events, err := h.listUseCase.Execute()
+
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "An internal server error occurred"})
+	}
+
+	return c.Status(http.StatusOK).JSON(events)
 }
 
 func (h *EventHandler) Create(c fiber.Ctx) error {
@@ -27,9 +40,9 @@ func (h *EventHandler) Create(c fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "Cannot parse request body"})
 	}
 
-	validate := validator.New()
-	if err := validate.Struct(req); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	validate, err := helper.Validate(req)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(validate)
 	}
 
 	event, err := h.createUseCase.Execute(create.DTO{
@@ -45,7 +58,7 @@ func (h *EventHandler) Create(c fiber.Ctx) error {
 	}
 
 	response := create.Response{
-		ID: event.ID.String(),
+		ID: event.ID,
 	}
 
 	return c.Status(http.StatusCreated).JSON(response)

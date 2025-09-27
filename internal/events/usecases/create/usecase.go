@@ -28,19 +28,19 @@ type DTO struct {
 }
 
 type UseCase interface {
-	Execute(dto DTO) (*domain.Event, error)
+	Execute(dto DTO) (Response, error)
 }
 
 type useCase struct {
 	repository domain.Repository
 }
 
-func (usecase *useCase) Execute(dto DTO) (*domain.Event, error) {
+func (usecase *useCase) Execute(dto DTO) (Response, error) {
 
 	parsedTime, err := time.Parse(time.DateTime, dto.DateAndTime)
 
 	if err != nil {
-		return nil, errors.New("invalid date and time format")
+		return Response{}, errors.New("invalid date and time format")
 	}
 
 	event := &domain.Event{
@@ -52,10 +52,12 @@ func (usecase *useCase) Execute(dto DTO) (*domain.Event, error) {
 	}
 
 	if err := usecase.repository.Create(event); err != nil {
-		return nil, err
+		return Response{}, err
 	}
 
-	return event, nil
+	return Response{
+		ID: event.ID.String(),
+	}, nil
 }
 
 func NewUseCase(repository domain.Repository) UseCase {
