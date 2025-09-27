@@ -1,0 +1,9 @@
+.env
+tmp
+vcs.xml
+.idea
+*.iml
+out
+.DS_Store
+*.log
+logs
