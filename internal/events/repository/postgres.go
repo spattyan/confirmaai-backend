@@ -24,8 +24,15 @@ func (g gormRepository) Create(event *domain.Event) error {
 }
 
 func (g gormRepository) FindByID(id string) (*domain.Event, error) {
-	//TODO implement me
-	panic("implement me")
+	var event domain.Event
+	result := g.database.First(&event, "id = ?", id)
+
+	if result.Error != nil {
+		log.Printf("Error fetching events: %v", result.Error)
+		return nil, errors.New("failed to fetch events")
+	}
+
+	return &event, nil
 }
 
 func (g gormRepository) Update(event *domain.Event) error {

@@ -11,12 +11,12 @@ type Event struct {
 	ID               uuid.UUID `json:"id" gorm:"type:uuid;primaryKey"`
 	Title            string    `json:"title"`
 	Description      string    `json:"description" gorm:""`
-	Location         string    `gorm:"not null"`
-	DateAndTime      time.Time `gorm:"not null"`
-	ParticipantLimit int       `gorm:"not null"`
+	Location         string    `json:"location" gorm:"not null"`
+	DateAndTime      time.Time `json:"date_and_time" gorm:"not null"`
+	ParticipantLimit int       `json:"participant_limit" gorm:"not null"`
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (user *Event) BeforeCreate(tx *gorm.DB) (err error) {
