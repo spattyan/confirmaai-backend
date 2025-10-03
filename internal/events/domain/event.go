@@ -19,11 +19,11 @@ type Event struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (user *Event) BeforeCreate(tx *gorm.DB) (err error) {
+func (event *Event) BeforeCreate(tx *gorm.DB) (err error) {
 	id, err := uuid.NewV7()
 	if err != nil {
 		return err
 	}
-	user.ID = id
+	event.ID = id
 	return
 }

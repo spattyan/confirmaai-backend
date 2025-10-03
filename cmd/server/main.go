@@ -5,9 +5,12 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/spattyan/confirmaai-backend/internal/events/domain"
-	"github.com/spattyan/confirmaai-backend/internal/events/handler"
-	"github.com/spattyan/confirmaai-backend/internal/events/repository"
+	eventDomain "github.com/spattyan/confirmaai-backend/internal/events/domain"
+	eventHand "github.com/spattyan/confirmaai-backend/internal/events/handler"
+	eventRepo "github.com/spattyan/confirmaai-backend/internal/events/repository"
+	userDomain "github.com/spattyan/confirmaai-backend/internal/users/domain"
+	userHand "github.com/spattyan/confirmaai-backend/internal/users/handler"
+	userRepo "github.com/spattyan/confirmaai-backend/internal/users/repository"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -26,16 +29,21 @@ func main() {
 	log.Println("Successfully connected to database")
 
 	// migrations
-	err = database.AutoMigrate(&domain.Event{})
+	err = database.AutoMigrate(&eventDomain.Event{}, &userDomain.User{})
 
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v\n", err)
 	}
 
-	eventRepository := repository.NewGormRepository(database)
-	eventHandler := handler.NewEventHandler(eventRepository)
+	eventRepository := eventRepo.NewGormRepository(database)
+	eventHandler := eventHand.NewEventHandler(eventRepository)
 
 	eventHandler.EventRoutes(app)
+
+	userRepository := userRepo.NewGormRepository(database)
+	userHandler := userHand.NewUserHandler(userRepository)
+
+	userHandler.UserRoutes(app)
 
 	if err := app.Listen(":3000"); err != nil {
 		log.Printf("Error starting server: %s", err)
