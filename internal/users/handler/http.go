@@ -15,8 +15,8 @@ type UserHandler struct {
 	loginUseCase    login.UseCase
 }
 
-func NewUserHandler(repository domain.Repository) *UserHandler {
-	return &UserHandler{registerUseCase: register.NewUseCase(repository), loginUseCase: login.NewUseCase(repository)}
+func NewUserHandler(repository domain.Repository, auth *helper.Auth) *UserHandler {
+	return &UserHandler{registerUseCase: register.NewUseCase(repository, auth), loginUseCase: login.NewUseCase(repository, auth)}
 }
 
 func (h *UserHandler) UserRoutes(router fiber.Router) {

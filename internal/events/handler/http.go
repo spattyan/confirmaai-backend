@@ -12,19 +12,21 @@ import (
 )
 
 type EventHandler struct {
+	auth           *helper.Auth
 	createUseCase  create.UseCase
 	listUseCase    list.UseCase
 	getByIdUseCase getById.UseCase
 }
 
-func NewEventHandler(repository domain.Repository) *EventHandler {
-	return &EventHandler{createUseCase: create.NewUseCase(repository), listUseCase: list.NewUseCase(repository), getByIdUseCase: getById.NewUseCase(repository)}
+func NewEventHandler(repository domain.Repository, auth *helper.Auth) *EventHandler {
+	return &EventHandler{auth: auth, createUseCase: create.NewUseCase(repository), listUseCase: list.NewUseCase(repository), getByIdUseCase: getById.NewUseCase(repository)}
 }
 
 func (h *EventHandler) EventRoutes(router fiber.Router) {
-	router.Post("/events/new", h.Create)
-	router.Get("/events", h.List)
-	router.Get("/events/:id", h.GetById)
+	eventRoutes := router.Group("/events", h.auth.Authorize)
+	eventRoutes.Post("/new", h.Create)
+	eventRoutes.Get("/", h.List)
+	eventRoutes.Get("/:id", h.GetById)
 }
 
 func (h *EventHandler) GetById(c fiber.Ctx) error {

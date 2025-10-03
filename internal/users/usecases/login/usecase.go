@@ -12,7 +12,8 @@ type Request struct {
 }
 
 type Response struct {
-	ID string `json:"id"`
+	ID    string `json:"id"`
+	Token string `json:"token"`
 }
 
 type DTO struct {
@@ -25,6 +26,7 @@ type UseCase interface {
 }
 
 type useCase struct {
+	auth       *helper.Auth
 	repository domain.Repository
 }
 
@@ -40,11 +42,18 @@ func (usecase *useCase) Execute(dto DTO) (Response, error) {
 		return Response{}, errors.ErrInvalidPassword
 	}
 
+	token, err := usecase.auth.GenerateToken(user.ID, user.Email)
+
+	if err != nil {
+		return Response{}, errors.ErrGeneratingToken
+	}
+
 	return Response{
-		ID: user.ID.String(),
+		ID:    user.ID.String(),
+		Token: token,
 	}, nil
 }
 
-func NewUseCase(repository domain.Repository) UseCase {
-	return &useCase{repository: repository}
+func NewUseCase(repository domain.Repository, auth *helper.Auth) UseCase {
+	return &useCase{repository: repository, auth: auth}
 }

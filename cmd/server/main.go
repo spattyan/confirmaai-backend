@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/spattyan/confirmaai-backend/helper"
 	eventDomain "github.com/spattyan/confirmaai-backend/internal/events/domain"
 	eventHand "github.com/spattyan/confirmaai-backend/internal/events/handler"
 	eventRepo "github.com/spattyan/confirmaai-backend/internal/events/repository"
@@ -18,9 +19,16 @@ import (
 func main() {
 	fmt.Println("Hello World")
 
+	enviroment, err := helper.SetupEnv()
+
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	fmt.Println(enviroment)
 	app := fiber.New()
 
-	database, err := gorm.Open(postgres.Open("host=127.0.0.1 user=root password=root dbname=confirmaai port=5432 sslmode=disable"), &gorm.Config{})
+	database, err := gorm.Open(postgres.Open(enviroment.Dsn), &gorm.Config{})
 
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v\n", err)
@@ -35,17 +43,19 @@ func main() {
 		log.Fatalf("Failed to migrate database: %v\n", err)
 	}
 
+	auth := helper.SetupAuth(enviroment.AuthToken)
+
 	eventRepository := eventRepo.NewGormRepository(database)
-	eventHandler := eventHand.NewEventHandler(eventRepository)
+	eventHandler := eventHand.NewEventHandler(eventRepository, auth)
 
 	eventHandler.EventRoutes(app)
 
 	userRepository := userRepo.NewGormRepository(database)
-	userHandler := userHand.NewUserHandler(userRepository)
+	userHandler := userHand.NewUserHandler(userRepository, auth)
 
 	userHandler.UserRoutes(app)
 
-	if err := app.Listen(":3000"); err != nil {
+	if err := app.Listen(enviroment.ServerPort); err != nil {
 		log.Printf("Error starting server: %s", err)
 	}
 
