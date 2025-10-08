@@ -72,6 +72,8 @@ func (h *EventHandler) Create(c fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(validate)
 	}
 
+	//user := h.auth.GetCurrentUser(c)
+
 	event, err := h.createUseCase.Execute(create.DTO{
 		Title:            req.Title,
 		Description:      req.Description,

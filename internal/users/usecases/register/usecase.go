@@ -34,6 +34,16 @@ type useCase struct {
 
 func (usecase *useCase) Execute(dto DTO) (Response, error) {
 
+	_, err := helper.Validate(Request{
+		Name:     dto.Name,
+		Email:    dto.Email,
+		Password: dto.Password,
+	})
+
+	if err != nil {
+		return Response{}, err
+	}
+
 	hash, err := helper.HashPassword(dto.Password)
 
 	if err != nil {

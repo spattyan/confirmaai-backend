@@ -9,6 +9,8 @@ import (
 	eventDomain "github.com/spattyan/confirmaai-backend/internal/events/domain"
 	eventHand "github.com/spattyan/confirmaai-backend/internal/events/handler"
 	eventRepo "github.com/spattyan/confirmaai-backend/internal/events/repository"
+	participantDomain "github.com/spattyan/confirmaai-backend/internal/participants/domain"
+	participantRepo "github.com/spattyan/confirmaai-backend/internal/participants/repository"
 	userDomain "github.com/spattyan/confirmaai-backend/internal/users/domain"
 	userHand "github.com/spattyan/confirmaai-backend/internal/users/handler"
 	userRepo "github.com/spattyan/confirmaai-backend/internal/users/repository"
@@ -19,16 +21,16 @@ import (
 func main() {
 	fmt.Println("Hello World")
 
-	enviroment, err := helper.SetupEnv()
+	environment, err := helper.SetupEnv()
 
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	fmt.Println(enviroment)
+	fmt.Println(environment)
 	app := fiber.New()
 
-	database, err := gorm.Open(postgres.Open(enviroment.Dsn), &gorm.Config{})
+	database, err := gorm.Open(postgres.Open(environment.Dsn), &gorm.Config{})
 
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v\n", err)
@@ -37,25 +39,27 @@ func main() {
 	log.Println("Successfully connected to database")
 
 	// migrations
-	err = database.AutoMigrate(&eventDomain.Event{}, &userDomain.User{})
+	err = database.AutoMigrate(&eventDomain.Event{}, &userDomain.User{}, &participantDomain.Participant{})
 
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v\n", err)
 	}
 
-	auth := helper.SetupAuth(enviroment.AuthToken)
+	auth := helper.SetupAuth(environment.AuthToken)
 
 	eventRepository := eventRepo.NewGormRepository(database)
-	eventHandler := eventHand.NewEventHandler(eventRepository, auth)
+	userRepository := userRepo.NewGormRepository(database)
+	participantRepository := participantRepo.NewGormRepository(database)
 
+	fmt.Println(participantRepository) // to avoid unused variable error
+
+	eventHandler := eventHand.NewEventHandler(eventRepository, auth)
 	eventHandler.EventRoutes(app)
 
-	userRepository := userRepo.NewGormRepository(database)
 	userHandler := userHand.NewUserHandler(userRepository, auth)
-
 	userHandler.UserRoutes(app)
 
-	if err := app.Listen(enviroment.ServerPort); err != nil {
+	if err := app.Listen(environment.ServerPort); err != nil {
 		log.Printf("Error starting server: %s", err)
 	}
 

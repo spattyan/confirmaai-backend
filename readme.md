@@ -26,9 +26,11 @@ A **Encontros API** centraliza tudo isso, fornecendo uma fonte única de verdade
 
 A API é estruturada em torno de quatro entidades principais:
 
-| Tabela        | Descrição                                                              |
-|---------------|------------------------------------------------------------------------|
-| `Events`     | Armazena as informações centrais de cada encontro.                     |
+| Tabela        | Descrição                            |
+|---------------|--------------------------------------|
+| `Event`       | Armazena as informações centrais de cada encontro. |
+| `User`        | Armazena os usuários.                |
+| `Participant` | Uma ponte entre o usuário e eventos. |
 
 ## 🚀 Documentação da API (Endpoints)
 
@@ -49,7 +51,7 @@ Cria um novo evento.
     "description": "Churrasco para fechar o ano na casa do Bruno!",
     "location": "Rua Fictícia, 123",
     "date_and_time": "2025-12-20T13:00:00",
-    "participant_limit": 30,
+    "participant_limit": 30
   }
   ```
 </details>

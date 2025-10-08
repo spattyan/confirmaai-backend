@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/spattyan/confirmaai-backend/internal/participants/domain"
 	"gorm.io/gorm"
 )
 
@@ -14,6 +15,9 @@ type Event struct {
 	Location         string    `json:"location" gorm:"not null"`
 	DateAndTime      time.Time `json:"date_and_time" gorm:"not null"`
 	ParticipantLimit int       `json:"participant_limit" gorm:"not null"`
+
+	Participants []domain.Participant `json:"participants" gorm:"foreignKey:EventID"`
+	Roles        []EventRole          `json:"roles" gorm:"foreignKey:EventID"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
