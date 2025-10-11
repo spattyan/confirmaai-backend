@@ -1,10 +1,14 @@
 package create
 
 import (
-	"errors"
 	"time"
 
 	"github.com/spattyan/confirmaai-backend/internal/events/domain"
+	"github.com/spattyan/confirmaai-backend/internal/events/errors"
+	"github.com/spattyan/confirmaai-backend/internal/events/usecases/createEventRole"
+	"github.com/spattyan/confirmaai-backend/internal/events/usecases/deleteEvent"
+	"github.com/spattyan/confirmaai-backend/internal/participants/usecases/createParticipant"
+	userDomain "github.com/spattyan/confirmaai-backend/internal/users/domain"
 )
 
 type Request struct {
@@ -25,6 +29,7 @@ type DTO struct {
 	Location         string
 	DateAndTime      string
 	ParticipantLimit int
+	User             *userDomain.User
 }
 
 type UseCase interface {
@@ -32,7 +37,10 @@ type UseCase interface {
 }
 
 type useCase struct {
-	repository domain.Repository
+	repository        domain.Repository
+	createEventRole   createEventRole.UseCase
+	createParticipant createParticipant.UseCase
+	deleteEvent       deleteEvent.UseCase
 }
 
 func (usecase *useCase) Execute(dto DTO) (Response, error) {
@@ -40,7 +48,7 @@ func (usecase *useCase) Execute(dto DTO) (Response, error) {
 	parsedTime, err := time.Parse(time.DateTime, dto.DateAndTime)
 
 	if err != nil {
-		return Response{}, errors.New("invalid date and time format")
+		return Response{}, errors.ErrInvalidTimeFormat
 	}
 
 	event := &domain.Event{
@@ -55,11 +63,40 @@ func (usecase *useCase) Execute(dto DTO) (Response, error) {
 		return Response{}, err
 	}
 
+	eventRole, err := usecase.createEventRole.Execute(createEventRole.DTO{
+		EventID: event.ID.String(),
+		Name:    "Organizer",
+		Slots:   1,
+	})
+
+	if err != nil {
+		return Response{}, errors.ErrCreatingEventRole
+	}
+
+	_, err = usecase.createParticipant.Execute(createParticipant.DTO{
+		EventID: event.ID.String(),
+		UserID:  dto.User.ID.String(),
+		RoleID:  eventRole.ID,
+	})
+
+	if err != nil {
+		// TODO: call delete event role usecase
+
+		_, err := usecase.deleteEvent.Execute(deleteEvent.DTO{
+			Id: event.ID.String(),
+		})
+		if err != nil {
+			return Response{}, err
+		}
+
+		return Response{}, errors.ErrCreatingParticipant
+	}
+
 	return Response{
 		ID: event.ID.String(),
 	}, nil
 }
 
-func NewUseCase(repository domain.Repository) UseCase {
-	return &useCase{repository: repository}
+func NewUseCase(repository domain.Repository, createEventRole createEventRole.UseCase, createParticipant createParticipant.UseCase) UseCase {
+	return &useCase{repository: repository, createEventRole: createEventRole, createParticipant: createParticipant}
 }

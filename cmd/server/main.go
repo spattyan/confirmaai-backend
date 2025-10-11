@@ -39,7 +39,7 @@ func main() {
 	log.Println("Successfully connected to database")
 
 	// migrations
-	err = database.AutoMigrate(&eventDomain.Event{}, &userDomain.User{}, &participantDomain.Participant{})
+	err = database.AutoMigrate(&eventDomain.Event{}, &eventDomain.EventRole{}, &userDomain.User{}, &participantDomain.Participant{})
 
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v\n", err)
@@ -53,7 +53,7 @@ func main() {
 
 	fmt.Println(participantRepository) // to avoid unused variable error
 
-	eventHandler := eventHand.NewEventHandler(eventRepository, auth)
+	eventHandler := eventHand.NewEventHandler(eventRepository, userRepository, participantRepository, auth)
 	eventHandler.EventRoutes(app)
 
 	userHandler := userHand.NewUserHandler(userRepository, auth)

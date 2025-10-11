@@ -5,11 +5,60 @@ import (
 	"log"
 
 	"github.com/spattyan/confirmaai-backend/internal/events/domain"
+	participantDomain "github.com/spattyan/confirmaai-backend/internal/participants/domain"
 	"gorm.io/gorm"
 )
 
 type gormRepository struct {
 	database *gorm.DB
+}
+
+func (g gormRepository) ListParticipantsByEventID(eventID string) ([]participantDomain.Participant, error) {
+	var participants []participantDomain.Participant
+	result := g.database.Where("event_id = ?", eventID).Find(&participants)
+
+	if result.Error != nil {
+		log.Printf("Error fetching participants: %v", result.Error)
+		return nil, errors.New("failed to fetch participants")
+	}
+	return participants, nil
+}
+
+func (g gormRepository) CreateEventRole(role *domain.EventRole) error {
+	err := g.database.Create(&role).Error
+
+	if err != nil {
+		log.Printf("Error creating event role: %v", err)
+		return errors.New("failed to create event role")
+	}
+
+	return nil
+}
+
+func (g gormRepository) FindEventRoleByID(id string) (*domain.EventRole, error) {
+	var role domain.EventRole
+	result := g.database.First(&role, "id = ?", id)
+
+	if result.Error != nil {
+		log.Printf("Error fetching event role: %v", result.Error)
+		return nil, errors.New("failed to fetch event role")
+	}
+	return &role, nil
+}
+
+func (g gormRepository) UpdateEventRole(role *domain.EventRole) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (g gormRepository) DeleteEventRole(id string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (g gormRepository) ListEventRolesByEventID(eventID string) ([]domain.EventRole, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (g gormRepository) Create(event *domain.Event) error {

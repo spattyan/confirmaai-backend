@@ -24,7 +24,7 @@ func (g gormRepository) Create(participant *domain.Participant) error {
 		return errors.New("event not found")
 	}
 
-	err = g.database.First(&user, "id = ?", participant.EventID).Error
+	err = g.database.First(&user, "id = ?", participant.UserID).Error
 
 	if err != nil {
 		return errors.New("user not found")

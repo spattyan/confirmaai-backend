@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/spattyan/confirmaai-backend/internal/events/domain"
+	domain2 "github.com/spattyan/confirmaai-backend/internal/participants/domain"
 )
 
 type Request struct {
@@ -14,11 +15,12 @@ type Response struct {
 	Events []ResponseObject `json:"events"`
 }
 type ResponseObject struct {
-	Title            string `json:"title"`
-	Description      string `json:"description"`
-	Location         string `json:"location"`
-	DateAndTime      string `json:"date_and_time"`
-	ParticipantLimit int    `json:"participant_limit"`
+	Title            string                `json:"title"`
+	Description      string                `json:"description"`
+	Location         string                `json:"location"`
+	DateAndTime      string                `json:"date_and_time"`
+	ParticipantLimit int                   `json:"participant_limit"`
+	Participants     []domain2.Participant `json:"participants"`
 }
 
 type DTO struct {
@@ -42,12 +44,20 @@ func (usecase *useCase) Execute() (Response, error) {
 
 	responseObjects := make([]ResponseObject, len(events))
 	for i, event := range events {
+
+		participants, err := usecase.repository.ListParticipantsByEventID(event.ID.String())
+		if err != nil {
+			return Response{}, err
+		}
+
+		event.Participants = participants
 		responseObjects[i] = ResponseObject{
 			Title:            event.Title,
 			Description:      event.Description,
 			Location:         event.Location,
 			DateAndTime:      event.DateAndTime.Format(time.RFC3339),
 			ParticipantLimit: event.ParticipantLimit,
+			Participants:     event.Participants,
 		}
 	}
 

@@ -1,25 +1,43 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 	"github.com/spattyan/confirmaai-backend/helper"
 	"github.com/spattyan/confirmaai-backend/internal/events/domain"
 	"github.com/spattyan/confirmaai-backend/internal/events/usecases/create"
+	"github.com/spattyan/confirmaai-backend/internal/events/usecases/createEventRole"
 	"github.com/spattyan/confirmaai-backend/internal/events/usecases/getById"
 	"github.com/spattyan/confirmaai-backend/internal/events/usecases/list"
+	participantRepo "github.com/spattyan/confirmaai-backend/internal/participants/domain"
+	"github.com/spattyan/confirmaai-backend/internal/participants/usecases/createParticipant"
+	userRepo "github.com/spattyan/confirmaai-backend/internal/users/domain"
 )
 
 type EventHandler struct {
-	auth           *helper.Auth
-	createUseCase  create.UseCase
-	listUseCase    list.UseCase
-	getByIdUseCase getById.UseCase
+	auth              *helper.Auth
+	createUseCase     create.UseCase
+	listUseCase       list.UseCase
+	getByIdUseCase    getById.UseCase
+	createEventRole   createEventRole.UseCase
+	createParticipant createParticipant.UseCase
 }
 
-func NewEventHandler(repository domain.Repository, auth *helper.Auth) *EventHandler {
-	return &EventHandler{auth: auth, createUseCase: create.NewUseCase(repository), listUseCase: list.NewUseCase(repository), getByIdUseCase: getById.NewUseCase(repository)}
+func NewEventHandler(repository domain.Repository, userRepository userRepo.Repository, participantRepo participantRepo.Repository, auth *helper.Auth) *EventHandler {
+	createParticipantUs := createParticipant.NewUseCase(userRepository, repository, participantRepo)
+	createEventRoleUs := createEventRole.NewUseCase(repository)
+
+	return &EventHandler{
+		auth:              auth,
+		createUseCase:     create.NewUseCase(repository, createEventRoleUs, createParticipantUs),
+		listUseCase:       list.NewUseCase(repository),
+		getByIdUseCase:    getById.NewUseCase(repository),
+		createEventRole:   createEventRoleUs,
+		createParticipant: createParticipantUs,
+	}
 }
 
 func (h *EventHandler) EventRoutes(router fiber.Router) {
@@ -72,7 +90,11 @@ func (h *EventHandler) Create(c fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(validate)
 	}
 
-	//user := h.auth.GetCurrentUser(c)
+	user := h.auth.GetCurrentUser(c)
+
+	if user.ID == uuid.Nil {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
 
 	event, err := h.createUseCase.Execute(create.DTO{
 		Title:            req.Title,
@@ -80,10 +102,11 @@ func (h *EventHandler) Create(c fiber.Ctx) error {
 		Location:         req.Location,
 		DateAndTime:      req.DateAndTime,
 		ParticipantLimit: req.ParticipantLimit,
+		User:             &user,
 	})
 
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "An internal server error occurred"})
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("An internal server error occurred while creating event, %v", err)})
 	}
 
 	response := create.Response{
