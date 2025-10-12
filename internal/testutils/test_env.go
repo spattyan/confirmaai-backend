@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"testing"
 
 	eventDomain "github.com/spattyan/confirmaai-backend/internal/events/domain"
 	participantDomain "github.com/spattyan/confirmaai-backend/internal/participants/domain"
@@ -48,7 +49,7 @@ func SetupTestEnv() {
 			log.Fatalf("❌ failed to connect to postgres: %v", err)
 		}
 
-		if err := DB.AutoMigrate(&eventDomain.Event{}, &userDomain.User{}, &participantDomain.Participant{}); err != nil {
+		if err := DB.AutoMigrate(&eventDomain.Event{}, &userDomain.User{}, &participantDomain.Participant{}, &eventDomain.EventRole{}); err != nil {
 			log.Fatalf("❌ failed to migrate: %v", err)
 		}
 
@@ -56,8 +57,37 @@ func SetupTestEnv() {
 	})
 }
 
+func ResetDB() {
+	if DB == nil {
+		log.Fatalf("❌ DB not initialized. Did you forget to call SetupTestEnv()?")
+	}
+
+	tables := []string{
+		"participants",
+		"events",
+		"users",
+		"event_roles",
+	}
+
+	for _, table := range tables {
+		if err := DB.Exec(fmt.Sprintf("TRUNCATE TABLE %s RESTART IDENTITY CASCADE;", table)).Error; err != nil {
+			log.Fatalf("❌ failed to truncate table %s: %v", table, err)
+		}
+	}
+
+	log.Println("🧹 Database cleaned successfully")
+}
+
 func TeardownTestEnv() {
 	if container != nil {
 		_ = container.Terminate(context.Background())
 	}
+}
+
+func SetupIsolatedTest(t *testing.T) {
+	SetupTestEnv()
+	ResetDB()
+	t.Cleanup(func() {
+		ResetDB()
+	})
 }

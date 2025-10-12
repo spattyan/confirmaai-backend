@@ -14,14 +14,15 @@ type gormRepository struct {
 }
 
 func (g gormRepository) ListParticipantsByEventID(eventID string) ([]participantDomain.Participant, error) {
-	var participants []participantDomain.Participant
-	result := g.database.Where("event_id = ?", eventID).Find(&participants)
+	var event domain.Event
+	result := g.database.Preload("Participants").First(&event, "id = ?", eventID)
 
 	if result.Error != nil {
 		log.Printf("Error fetching participants: %v", result.Error)
 		return nil, errors.New("failed to fetch participants")
 	}
-	return participants, nil
+
+	return event.Participants, nil
 }
 
 func (g gormRepository) CreateEventRole(role *domain.EventRole) error {

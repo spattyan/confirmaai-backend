@@ -3,6 +3,7 @@ package create
 import (
 	"time"
 
+	"github.com/spattyan/confirmaai-backend/helper"
 	"github.com/spattyan/confirmaai-backend/internal/events/domain"
 	"github.com/spattyan/confirmaai-backend/internal/events/errors"
 	"github.com/spattyan/confirmaai-backend/internal/events/usecases/createEventRole"
@@ -16,7 +17,7 @@ type Request struct {
 	Description      string `json:"description"`
 	Location         string `json:"location" validate:"required,min=4"`
 	DateAndTime      string `json:"date_and_time" validate:"required"`
-	ParticipantLimit int    `json:"participant_limit" validate:"required,min=1"`
+	ParticipantLimit int    `json:"participant_limit" validate:"required,gte=0"`
 }
 
 type Response struct {
@@ -44,6 +45,18 @@ type useCase struct {
 }
 
 func (usecase *useCase) Execute(dto DTO) (Response, error) {
+
+	_, err := helper.Validate(Request{
+		Title:            dto.Title,
+		Description:      dto.Description,
+		Location:         dto.Location,
+		DateAndTime:      dto.DateAndTime,
+		ParticipantLimit: dto.ParticipantLimit,
+	})
+
+	if err != nil {
+		return Response{}, err
+	}
 
 	parsedTime, err := time.Parse(time.DateTime, dto.DateAndTime)
 

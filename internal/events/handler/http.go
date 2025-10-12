@@ -85,11 +85,6 @@ func (h *EventHandler) Create(c fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "Cannot parse request body"})
 	}
 
-	validate, err := helper.Validate(req)
-	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(validate)
-	}
-
 	user := h.auth.GetCurrentUser(c)
 
 	if user.ID == uuid.Nil {
