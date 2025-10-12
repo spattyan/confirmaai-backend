@@ -70,6 +70,7 @@ func (usecase *useCase) Execute(dto DTO) (Response, error) {
 		Location:         dto.Location,
 		DateAndTime:      parsedTime,
 		ParticipantLimit: dto.ParticipantLimit,
+		CreatedByID:      dto.User.ID,
 	}
 
 	if err := usecase.repository.Create(event); err != nil {

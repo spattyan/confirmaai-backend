@@ -48,18 +48,31 @@ func (g gormRepository) FindEventRoleByID(id string) (*domain.EventRole, error) 
 }
 
 func (g gormRepository) UpdateEventRole(role *domain.EventRole) error {
-	//TODO implement me
-	panic("implement me")
+	err := g.database.Save(&role).Error
+	if err != nil {
+		return errors.New("failed to update event role")
+	}
+	return nil
 }
 
 func (g gormRepository) DeleteEventRole(id string) error {
-	//TODO implement me
-	panic("implement me")
+	err := g.database.Delete(&domain.EventRole{}, "id = ?", id).Error
+	if err != nil {
+		return errors.New("failed to delete event role")
+	}
+	return nil
 }
 
 func (g gormRepository) ListEventRolesByEventID(eventID string) ([]domain.EventRole, error) {
-	//TODO implement me
-	panic("implement me")
+	var roles []domain.EventRole
+	result := g.database.Where("event_id = ?", eventID).Find(&roles)
+
+	if result.Error != nil {
+		log.Printf("Error fetching event roles: %v", result.Error)
+		return nil, errors.New("failed to fetch event roles")
+	}
+
+	return roles, nil
 }
 
 func (g gormRepository) Create(event *domain.Event) error {
@@ -75,7 +88,11 @@ func (g gormRepository) Create(event *domain.Event) error {
 
 func (g gormRepository) FindByID(id string) (*domain.Event, error) {
 	var event domain.Event
-	result := g.database.First(&event, "id = ?", id)
+	result := g.database.
+		Preload("Participants", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "event_id", "user_id", "role_id")
+		}).
+		First(&event, "id = ?", id)
 
 	if result.Error != nil {
 		log.Printf("Error fetching events: %v", result.Error)
