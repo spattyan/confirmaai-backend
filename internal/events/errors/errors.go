@@ -7,4 +7,5 @@ var (
 	ErrInvalidTimeFormat   = errors.New("invalid date and time format")
 	ErrCreatingEventRole   = errors.New("error creating event role")
 	ErrCreatingParticipant = errors.New("error creating participant")
+	ErrForbidden           = errors.New("forbidden")
 )

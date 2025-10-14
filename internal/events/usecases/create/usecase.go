@@ -97,7 +97,8 @@ func (usecase *useCase) Execute(dto DTO) (Response, error) {
 		// TODO: call delete event role usecase
 
 		_, err := usecase.deleteEvent.Execute(deleteEvent.DTO{
-			Id: event.ID.String(),
+			Id:   event.ID.String(),
+			User: dto.User,
 		})
 		if err != nil {
 			return Response{}, err

@@ -3,6 +3,7 @@ package deleteEvent
 import (
 	"github.com/spattyan/confirmaai-backend/internal/events/domain"
 	"github.com/spattyan/confirmaai-backend/internal/events/errors"
+	userDomain "github.com/spattyan/confirmaai-backend/internal/users/domain"
 )
 
 type Request struct {
@@ -14,7 +15,8 @@ type Response struct {
 }
 
 type DTO struct {
-	Id string
+	Id   string
+	User *userDomain.User
 }
 
 type UseCase interface {
@@ -31,6 +33,10 @@ func (usecase *useCase) Execute(dto DTO) (Response, error) {
 
 	if err != nil {
 		return Response{}, errors.ErrEventNotFound
+	}
+
+	if event.CreatedByID != dto.User.ID {
+		return Response{}, errors.ErrForbidden
 	}
 
 	if err := usecase.repository.Delete(event.ID.String()); err != nil {
