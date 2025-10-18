@@ -5,6 +5,7 @@ import (
 	"github.com/spattyan/confirmaai-backend/helper"
 	"github.com/spattyan/confirmaai-backend/internal/events/domain"
 	"github.com/spattyan/confirmaai-backend/internal/events/errors"
+	userDomain "github.com/spattyan/confirmaai-backend/internal/users/domain"
 )
 
 type Request struct {
@@ -21,6 +22,7 @@ type DTO struct {
 	EventID string
 	Name    string
 	Slots   int
+	User    *userDomain.User
 }
 
 type UseCase interface {
@@ -41,8 +43,14 @@ func (usecase *useCase) Execute(dto DTO) (Response, error) {
 		return Response{}, err
 	}
 
-	if _, err := usecase.repository.FindByID(dto.EventID); err != nil {
+	event, err := usecase.repository.FindByID(dto.EventID)
+
+	if err != nil {
 		return Response{}, errors.ErrEventNotFound
+	}
+
+	if event.CreatedByID != dto.User.ID {
+		return Response{}, errors.ErrUnauthorizedAction
 	}
 
 	role := &domain.EventRole{

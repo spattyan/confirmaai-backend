@@ -81,6 +81,7 @@ func (usecase *useCase) Execute(dto DTO) (Response, error) {
 		EventID: event.ID.String(),
 		Name:    "Organizer",
 		Slots:   1,
+		User:    dto.User,
 	})
 
 	if err != nil {

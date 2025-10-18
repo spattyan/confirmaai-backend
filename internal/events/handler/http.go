@@ -11,6 +11,7 @@ import (
 	"github.com/spattyan/confirmaai-backend/internal/events/usecases/create"
 	"github.com/spattyan/confirmaai-backend/internal/events/usecases/createEventRole"
 	"github.com/spattyan/confirmaai-backend/internal/events/usecases/getById"
+	"github.com/spattyan/confirmaai-backend/internal/events/usecases/getEventRoles"
 	"github.com/spattyan/confirmaai-backend/internal/events/usecases/list"
 	participantRepo "github.com/spattyan/confirmaai-backend/internal/participants/domain"
 	"github.com/spattyan/confirmaai-backend/internal/participants/usecases/createParticipant"
@@ -24,6 +25,7 @@ type EventHandler struct {
 	getByIdUseCase    getById.UseCase
 	createEventRole   createEventRole.UseCase
 	createParticipant createParticipant.UseCase
+	getEventRoles     getEventRoles.UseCase
 }
 
 func NewEventHandler(repository domain.Repository, userRepository userRepo.Repository, participantRepo participantRepo.Repository, auth *helper.Auth) *EventHandler {
@@ -37,6 +39,7 @@ func NewEventHandler(repository domain.Repository, userRepository userRepo.Repos
 		getByIdUseCase:    getById.NewUseCase(repository),
 		createEventRole:   createEventRoleUs,
 		createParticipant: createParticipantUs,
+		getEventRoles:     getEventRoles.NewUseCase(repository),
 	}
 }
 
@@ -45,6 +48,9 @@ func (h *EventHandler) EventRoutes(router fiber.Router) {
 	eventRoutes.Post("/new", h.Create)
 	eventRoutes.Get("/", h.List)
 	eventRoutes.Get("/:id", h.GetById)
+
+	eventRoutes.Post("/roles/new", h.CreateEventRole)
+	eventRoutes.Get("/roles/:id", h.ListEventRoles)
 }
 
 func (h *EventHandler) GetById(c fiber.Ctx) error {
@@ -109,4 +115,53 @@ func (h *EventHandler) Create(c fiber.Ctx) error {
 	}
 
 	return c.Status(http.StatusCreated).JSON(response)
+}
+
+func (h *EventHandler) CreateEventRole(c fiber.Ctx) error {
+	var req createEventRole.Request
+
+	if err := c.Bind().Body(&req); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "Cannot parse request body"})
+	}
+	user := h.auth.GetCurrentUser(c)
+
+	if user.ID == uuid.Nil {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	eventRole, err := h.createEventRole.Execute(createEventRole.DTO{
+		EventID: req.EventID,
+		Name:    req.Name,
+		Slots:   req.Slots,
+		User:    &user,
+	})
+
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "An internal server error occurred"})
+	}
+
+	return c.Status(http.StatusCreated).JSON(fiber.Map{
+		"id": eventRole.ID,
+	})
+
+}
+
+func (h *EventHandler) ListEventRoles(c fiber.Ctx) error {
+	var req getEventRoles.Request
+
+	if err := c.Bind().URI(&req); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "Cannot parse request body"})
+	}
+
+	roles, err := h.getEventRoles.Execute(getEventRoles.DTO{
+		Id: req.Id,
+	})
+
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": err,
+		})
+	}
+
+	return c.Status(http.StatusOK).JSON(roles)
 }
