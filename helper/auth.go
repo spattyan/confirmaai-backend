@@ -97,6 +97,21 @@ func (auth Auth) Authorize(ctx fiber.Ctx) error {
 	}
 
 }
+
+func (auth Auth) AdminAuthorize(ctx fiber.Ctx) error {
+	authHeader := ctx.Get("Authorization")
+	user, err := auth.VerifyToken(authHeader)
+
+	if user.Admin {
+		ctx.Locals("user", user)
+		return ctx.Next()
+	}
+
+	return ctx.Status(401).JSON(&fiber.Map{
+		"message": "authorization failed",
+		"reason":  err,
+	})
+}
 func (auth Auth) GetCurrentUser(ctx fiber.Ctx) domain.User {
 
 	user := ctx.Locals("user").(domain.User)

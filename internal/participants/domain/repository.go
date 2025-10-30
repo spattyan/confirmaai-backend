@@ -8,4 +8,7 @@ type Repository interface {
 	FindByEventAndUser(eventID, userID string) (*Participant, error)
 	Update(participant *Participant) error
 	Delete(id string) error
+
+	CreatePermission(name, key string) error
+	GetPermissionByKey(key string) (*Permission, error)
 }

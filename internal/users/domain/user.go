@@ -12,6 +12,7 @@ type User struct {
 	Name  string    `json:"name,omitempty" gorm:"not null"`
 	Email string    `json:"email,omitempty" gorm:"unique;not null"`
 	Phone string    `json:"phone,omitempty" gorm:"not null"`
+	Admin bool      `json:"admin,omitempty" gorm:"not null;default:false"`
 
 	Participants []domain.Participant `json:"participants,omitempty" gorm:"foreignKey:UserID"`
 

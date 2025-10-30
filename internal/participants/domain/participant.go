@@ -13,6 +13,8 @@ type Participant struct {
 	UserID  uuid.UUID `json:"user_id" gorm:"type:uuid;not null"`
 	RoleID  uuid.UUID `json:"role_id" gorm:"type:uuid;not null"`
 
+	Permissions []Permission `json:"permissions" gorm:"many2many:participant_permissions;"`
+
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 }
